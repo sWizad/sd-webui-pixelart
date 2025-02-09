@@ -13,7 +13,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     model = None
 
     def ui(self):
-        quantization_methods = ['Median cut', 'Maximum coverage', 'Fast octree']
+        quantization_methods = ['Maximum coverage','Median cut', 'Fast octree']
         dither_methods = ['None', 'Floyd-Steinberg']
 
         if features.check_feature("libimagequant"):
@@ -26,13 +26,28 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                     downscale = gr.Slider(label="Downscale", minimum=1, maximum=32, step=2, value=8)
                     need_rescale = gr.Checkbox(label="Rescale to original size", value=True)
                 with gr.Tabs():
-                    with gr.TabItem("Color"):
-                        enable_color_limit = gr.Checkbox(label="Enable", value=False)
+                    #with gr.TabItem("Color"):
+                    #    enable_color_limit = gr.Checkbox(label="Enable", value=False)
+                    #    number_of_colors = gr.Slider(label="Palette Size", minimum=1, maximum=256, step=1, value=16)
+                    #    quantization_method = gr.Radio(choices=quantization_methods, value=quantization_methods[0], label='Colors quantization method')
+                    #    dither_method = gr.Radio(choices=dither_methods, value=dither_methods[0], label='Colors dither method')
+                    #    use_k_means = gr.Checkbox(label="Enable k-means for color quantization", value=True)
+                    #with gr.TabItem("Fixed Custom color palette"):
+                    #    use_color_palette = gr.Checkbox(label="Enable", value=False)
+                    #    palette_image=gr.Image(label="Color palette image", type="pil")
+                    #    palette_colors = gr.Slider(label="Palette Size (only for complex images)", minimum=1, maximum=256, step=1, value=16)
+                    #    dither_method_palette = gr.Radio(choices=dither_methods, value=dither_methods[0], label='Colors dither method')
+                    with gr.TabItem("Fixed Custom color palette post"):
+                        use_color_palette = gr.Checkbox(label="Enable", value=False)
+                        palette_image=gr.Image(label="Color palette image", type="pil")
                         number_of_colors = gr.Slider(label="Palette Size", minimum=1, maximum=256, step=1, value=16)
+                        palette_colors = gr.Slider(label="Palette Size (only for complex images)", minimum=1, maximum=256, step=1, value=256)
                         quantization_method = gr.Radio(choices=quantization_methods, value=quantization_methods[0], label='Colors quantization method')
                         dither_method = gr.Radio(choices=dither_methods, value=dither_methods[0], label='Colors dither method')
                         use_k_means = gr.Checkbox(label="Enable k-means for color quantization", value=True)
                     with gr.TabItem("Grayscale"):
+                        enable_color_limit = gr.Checkbox(label="Enable", value=False)
+                        dither_method_palette = gr.Radio(choices=dither_methods, value=dither_methods[0], label='Colors dither method')
                         is_grayscale = gr.Checkbox(label="Enable", value=False)
                         number_of_shades = gr.Slider(label="Palette Size", minimum=1, maximum=256, step=1, value=16)
                         quantization_method_grayscale = gr.Radio(choices=quantization_methods, value=quantization_methods[0], label='Colors quantization method')
@@ -44,11 +59,6 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                             inversed_black_and_white = gr.Checkbox(label="Inverse", value=False)
                         with gr.Row():
                             black_and_white_threshold = gr.Slider(label="Threshold", minimum=1, maximum=256, step=1, value=128)
-                    with gr.TabItem("Custom color palette"):
-                        use_color_palette = gr.Checkbox(label="Enable", value=False)
-                        palette_image=gr.Image(label="Color palette image", type="pil")
-                        palette_colors = gr.Slider(label="Palette Size (only for complex images)", minimum=1, maximum=256, step=1, value=16)
-                        dither_method_palette = gr.Radio(choices=dither_methods, value=dither_methods[0], label='Colors dither method')
 
         return {
             "enabled": enabled,
@@ -133,7 +143,9 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                     image=new_image,
                     palette=palette_image,
                     palette_colors=palette_colors,
-                    dither=dither_palette
+                    dither=dither_palette,
+                    quantize=QUANTIZATION_METHODS['Maximum coverage'],
+                    use_k_means=True,
                 )
 
             if black_and_white:
@@ -149,14 +161,14 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                     use_k_means=use_k_means_grayscale
                 )
 
-            if enable_color_limit:
-                new_image = limit_colors(
-                    image=new_image,
-                    limit=int(number_of_colors),
-                    quantize=quantize,
-                    dither=dither,
-                    use_k_means=use_k_means
-                )
+            #if enable_color_limit:
+            #    new_image = limit_colors(
+            #        image=new_image,
+            #        limit=int(number_of_colors),
+            #        quantize=quantize,
+            #        dither=dither,
+            #        use_k_means=use_k_means
+            #    )
 
             if need_rescale:
                 new_image = resize_image(new_image, (original_width, original_height))

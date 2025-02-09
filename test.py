@@ -1,19 +1,5 @@
 from PIL import Image
-
-# https://pillow.readthedocs.io/en/stable/reference/Image.html#dither-modes
-DITHER_METHODS = {
-    "None": Image.Dither.NONE,
-    "Floyd-Steinberg": Image.Dither.FLOYDSTEINBERG
-}
-
-#https://pillow.readthedocs.io/en/stable/reference/Image.html#quantization-methods
-QUANTIZATION_METHODS = {
-    "Median cut": Image.Quantize.MEDIANCUT,
-    "Maximum coverage": Image.Quantize.MAXCOVERAGE,
-    "Fast octree": Image.Quantize.FASTOCTREE,
-    "libimagequant": Image.Quantize.LIBIMAGEQUANT
-}
-
+import os
 
 def downscale_image(image: Image, scale: int) -> Image:
     width, height = image.size
@@ -25,7 +11,6 @@ def resize_image(image: Image, size) -> Image:
     width, height = size
     resized_image = image.resize((width, height), Image.NEAREST)
     return resized_image
-
 
 def limit_colors(
         image,
@@ -65,16 +50,30 @@ def limit_colors(
     return new_image
 
 
-def convert_to_grayscale(image):
-    new_image = image.convert("L")
-    return new_image.convert("RGB")
+if __name__ == "__main__":
+    image_path = r"examples\00008-362389673.png" 
+    original = Image.open(image_path)
+    p_path = r"examples\482.152.png" 
+    p_img = Image.open(p_path)
 
 
-def convert_to_black_and_white(image: Image, threshold: int=128, is_inversed: bool=False):
-    if is_inversed:
-        apply_threshold = lambda x : 255 if x < threshold else 0
-    else:
-        apply_threshold = lambda x : 255 if x > threshold else 0
+    image = downscale_image(original,8)
+    palette = downscale_image(p_img,8)
+    
+    # Create output directory if it doesn't exist
+    output_dir = "color_limit_tests"
+    os.makedirs(output_dir, exist_ok=True)
 
-    black_and_white_image = image.convert('L', dither=Image.Dither.NONE).point(apply_threshold, mode='1')
-    return black_and_white_image.convert("RGB")
+    result = limit_colors(
+                image,
+                limit=16,
+                palette=palette,
+                palette_colors=256,
+                #quantize=Image.Quantize.MEDIANCUT,
+                quantize=Image.Quantize.MAXCOVERAGE,
+                dither=Image.Dither.NONE,
+                use_k_means=True,
+            )
+    result = resize_image(result,original.size)
+    output_path = os.path.join(output_dir, "test.png")
+    result.save(output_path)
